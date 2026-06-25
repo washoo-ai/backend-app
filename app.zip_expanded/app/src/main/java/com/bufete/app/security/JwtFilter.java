@@ -33,15 +33,16 @@ public class JwtFilter extends OncePerRequestFilter {
             FilterChain filterChain
     ) throws ServletException, IOException {
 
-        String path = request.getRequestURI();
+        // 🔥 USAR SERVLET PATH (CORRECTO EN PRODUCCIÓN)
+        String path = request.getServletPath();
 
-        // 🔥 LIBERAR ENDPOINTS DE AUTH
+        // ✅ LIBERAR AUTH ENDPOINTS
         if (path.startsWith("/api/auth/")) {
             filterChain.doFilter(request, response);
             return;
         }
 
-        // 🔥 PERMITIR CORS PRE-FLIGHT
+        // ✅ PRE-FLIGHT CORS
         if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
             filterChain.doFilter(request, response);
             return;
@@ -51,7 +52,7 @@ public class JwtFilter extends OncePerRequestFilter {
 
         try {
 
-            // 🔥 SI NO HAY TOKEN, CONTINÚA NORMAL
+            // 🔥 SIN TOKEN → SIGUE NORMAL
             if (authHeader == null || !authHeader.startsWith("Bearer ")) {
                 filterChain.doFilter(request, response);
                 return;

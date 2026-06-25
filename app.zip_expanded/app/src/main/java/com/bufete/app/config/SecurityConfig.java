@@ -1,11 +1,13 @@
 package com.bufete.app.config;
 
+
 import com.bufete.app.security.JwtFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.*;
@@ -22,13 +24,13 @@ public class SecurityConfig {
         this.jwtFilter = jwtFilter;
     }
 
-    // 🔥 CORS GLOBAL REAL (ESTO TE QUITA EL ERROR DE ANGULAR)
+    // 🌐 CORS GLOBAL
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
 
         config.setAllowedOriginPatterns(List.of("*"));
-        config.setAllowedMethods(List.of("GET","POST","PUT","DELETE","OPTIONS"));
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(false);
 
@@ -42,19 +44,35 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 
         http
+            // 🔥 DESACTIVAR CSRF (API REST JWT)
             .csrf(csrf -> csrf.disable())
 
+            // 🌐 CORS
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
 
+            // 🔐 REGLAS DE ACCESO
             .authorizeHttpRequests(auth -> auth
+
+                // ✅ AUTH LIBRE
                 .requestMatchers("/api/auth/**").permitAll()
+
+                // ✅ PRE-FLIGHT CORS
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                
-                .requestMatchers(HttpMethod.DELETE,"/api/eventos/**").permitAll()
+
+                // (opcional) DELETE eventos libre si lo necesitas
+                .requestMatchers(HttpMethod.DELETE, "/api/eventos/**").permitAll()
+
+                // 🔒 TODO LO DEMÁS PROTEGIDO
                 .anyRequest().authenticated()
             )
 
-            .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
+            // 🧠 JWT FILTER
+            .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
+
+            // 🚀 API SIN SESIÓN
+            .sessionManagement(session ->
+                session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+            );
 
         return http.build();
     }
